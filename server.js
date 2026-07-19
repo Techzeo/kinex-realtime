@@ -17,6 +17,16 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
   console.log("Connected:", socket.id);
+  const app = express();
+
+app.use(cors());
+
+app.get("/", (req, res) => {
+  res.json({
+    status: "online",
+    service: "Kinex Realtime Server",
+  });
+});
 
   socket.on("join-room", (roomId) => {
     socket.join(roomId);
