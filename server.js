@@ -7,20 +7,6 @@ const app = express();
 
 app.use(cors());
 
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-  },
-});
-
-io.on("connection", (socket) => {
-  console.log("Connected:", socket.id);
-  const app = express();
-
-app.use(cors());
-
 app.get("/", (req, res) => {
   res.json({
     status: "online",
@@ -28,10 +14,35 @@ app.get("/", (req, res) => {
   });
 });
 
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("Connected:", socket.id);
+
+  // JOIN ROOM
   socket.on("join-room", (roomId) => {
     socket.join(roomId);
+
+    const room =
+      io.sockets.adapter.rooms.get(roomId);
+
+    io.to(roomId).emit("member-count", {
+      count: room ? room.size : 1,
+    });
+
+    console.log(
+      `${socket.id} joined room ${roomId}`
+    );
   });
 
+  // CHAT
   socket.on("chat-message", (data) => {
     io.to(data.roomId).emit(
       "new-message",
@@ -39,6 +50,7 @@ app.get("/", (req, res) => {
     );
   });
 
+  // REACTIONS
   socket.on("reaction", (data) => {
     io.to(data.roomId).emit(
       "reaction-received",
@@ -46,6 +58,7 @@ app.get("/", (req, res) => {
     );
   });
 
+  // VIDEO SYNC
   socket.on("sync-play", (data) => {
     socket.to(data.roomId).emit(
       "sync-play",
@@ -60,6 +73,14 @@ app.get("/", (req, res) => {
     );
   });
 
+  socket.on("sync-seek", (data) => {
+    socket.to(data.roomId).emit(
+      "sync-seek",
+      data
+    );
+  });
+
+  // WEBRTC SIGNALING
   socket.on("webrtc-offer", (data) => {
     socket.to(data.roomId).emit(
       "webrtc-offer",
@@ -82,13 +103,18 @@ app.get("/", (req, res) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("Disconnected");
+    console.log("Disconnected:", socket.id);
+
+    io.emit("user-left", {
+      socketId: socket.id,
+    });
   });
 });
 
-server.listen(
-  process.env.PORT || 3001,
-  () => {
-    console.log("Realtime running");
-  }
-);
+const PORT = process.env.PORT || 3001;
+
+server.listen(PORT, () => {
+  console.log(
+    `Realtime running on port ${PORT}`
+  );
+});
