@@ -1,13 +1,14 @@
 {
   "name": "kinex-realtime",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Kinex Realtime Server",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Techzeo",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
